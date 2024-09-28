@@ -1,0 +1,38 @@
+services:
+  redis:
+    image: redis:7.2-bookworm
+  postgres:
+    image: postgres:16-bookworm
+    depends_on:
+      - redis
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -d $$POSTGRES_DB -U $$POSTGRES_USER"]
+      interval: 1s
+      retries: 10
+      start_period: 5s
+    env_file:
+      - .env
+  nginx:
+    build:
+      context: server/nginx
+      dockerfile: Dockerfile
+    depends_on:
+      app:
+        condition: service_started
+    ports:
+      - '80:80'
+  app:
+    build:
+      dockerfile: App.development.dockerfile
+      context: ./server/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env
+    command: ["serve"]
+    develop:
+      watch:
+        - action: sync
+          path: server/app
+          target: /app

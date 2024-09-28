@@ -1,0 +1,25 @@
+version: "3"
+rpc:
+  listen: tcp://127.0.0.1:6001
+server:
+  command: "php vendor/bin/roadrunner-worker"
+  relay: pipes
+  env:
+    - APP_BASE_PATH: "."
+    - LARAVEL_OCTANE: "1"
+http:
+  address: 0.0.0.0:8000
+  middleware: ["http_metrics", "headers", "gzip", "proxy_ip_parser", "static"]
+  pool:
+    debug: true
+    num_workers: 3
+    max_jobs: 700
+    supervisor:
+      exec_ttl: 60s
+  headers:
+    response:
+      X-Powered-By: "RoadRunner"
+  trusted_subnets: ["0.0.0.0/0", "::/0"]
+metrics:
+  address: 0.0.0.0:9090
+
